@@ -53,7 +53,7 @@ class RetinaFaceDetection(object):
         self.net.load_state_dict(pretrained_dict, strict=False)
         self.net.eval()
     
-    def detect(self, img_raw, resize=1, confidence_threshold=0.9, nms_threshold=0.4, top_k=5000, keep_top_k=750, save_image=False):
+    def detect(self, img_raw, resize=1, confidence_threshold=0.01, nms_threshold=0.4, top_k=5000, keep_top_k=750, save_image=False):
         img = np.float32(img_raw)
 
         im_height, im_width = img.shape[:2]
