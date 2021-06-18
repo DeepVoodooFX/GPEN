@@ -14,6 +14,7 @@ from face_model.face_gan import FaceGAN
 from align_faces import warp_and_crop_face, get_reference_facial_points
 from skimage import transform as tf
 import torch
+from argparse import ArgumentParser
 
 
 class FaceEnhancement(object):
@@ -43,14 +44,12 @@ class FaceEnhancement(object):
 
     def process(self, img):
         facebs, landms = self.facedetector.detect(img)
-        print(landms)
         orig_faces, enhanced_faces = [], []
         height, width = img.shape[:2]
         full_mask = np.zeros((height, width), dtype=np.float32)
         full_img = np.zeros(img.shape, dtype=np.uint8)
 
         for i, (faceb, facial5points) in enumerate(zip(facebs, landms)):
-            print(faceb[4])
             if faceb[4]<self.threshold: continue
             fh, fw = (faceb[3]-faceb[1]), (faceb[2]-faceb[0])
 
@@ -84,17 +83,21 @@ class FaceEnhancement(object):
         
 
 if __name__=='__main__':
+
+    parser = ArgumentParser()
+    parser.add_argument("--input_dir", dest='input_dir', default='', help="Path to input images")
+    parser.add_argument("--output_dir", dest='output_dir', default='', help="Path to saved models")
+    opt = parser.parse_args()
+
     model = {'name':'GPEN-512', 'size':512}
     
-    indir = '/media/ubuntu/WDC/deepvoodoo_data/frank'
-    outdir = '/media/ubuntu/WDC/deepvoodoo_results/frank_GPEN_512'
-    os.makedirs(outdir, exist_ok=True)
+    os.makedirs(opt.output_dir, exist_ok=True)
 
     with torch.backends.cudnn.flags(enabled=False):
 
         faceenhancer = FaceEnhancement(size=model['size'], model=model['name'], channel_multiplier=2)
 
-        files = sorted(glob.glob(os.path.join(indir, '*.*g')))
+        files = sorted(glob.glob(os.path.join(opt.input_dir, '*.*g')))
         for n, file in enumerate(files[:]):
 
             filename = os.path.basename(file)
@@ -107,12 +110,9 @@ if __name__=='__main__':
 
             img, orig_faces, enhanced_faces = faceenhancer.process(im)
             
-            cv2.imwrite(os.path.join(outdir, '.'.join(filename.split('.')[:-1])+'_COMP.jpg'), np.hstack((im, img)))
-            cv2.imwrite(os.path.join(outdir, '.'.join(filename.split('.')[:-1])+'_GPEN.jpg'), img)
+            # cv2.imwrite(os.path.join(opt.output_dir, '.'.join(filename.split('.')[:-1])+'_COMP.jpg'), np.hstack((im, img)))
+            cv2.imwrite(os.path.join(opt.output_dir, '.'.join(filename.split('.')[:-1])+'_GPEN.jpg'), img)
             
-            for m, (ef, of) in enumerate(zip(enhanced_faces, orig_faces)):
-                of = cv2.resize(of, ef.shape[:2])
-                cv2.imwrite(os.path.join(outdir, '.'.join(filename.split('.')[:-1])+'_face%02d'%m+'.jpg'), np.hstack((of, ef)))
-            
-            # if n%10==0: print(n, filename)
-            
+            # for m, (ef, of) in enumerate(zip(enhanced_faces, orig_faces)):
+            #     of = cv2.resize(of, ef.shape[:2])
+            #     cv2.imwrite(os.path.join(opt.output_dir, '.'.join(filename.split('.')[:-1])+'_face%02d'%m+'.jpg'), np.hstack((of, ef)))            
