@@ -1,14 +1,12 @@
 # Install
 
 ```
-git clone https://github.com/chuanli11/GPEN.git
+git clone https://github.com/DeepVoodooFX/GPEN.git
 cd GPEN
 virtualenv -p /usr/bin/python3.6 venv
 . venv/bin/activate
 
 pip install -r requirements.txt
-pip uninstall torch
-pip install torch==1.7.0 torchvision==0.8.0
 
 cd weights
 wget https://public-vigen-video.oss-cn-shanghai.aliyuncs.com/robin/models/RetinaFace-R50.pth
