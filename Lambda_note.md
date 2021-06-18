@@ -24,5 +24,6 @@ wget https://public-vigen-video.oss-cn-shanghai.aliyuncs.com/robin/models/GPEN-1
 ```
 python face_enhancement.py \
 --input_dir /ParkCounty/home/DFDNet_data/frank \
---output_dir /ParkCounty/home/DFDNet_data/frank_GPEN_512
+--output_dir /ParkCounty/home/DFDNet_data/frank_GPEN_512 \
+--gpu_id 0
 ```

@@ -3,6 +3,18 @@
 @author: yangxy (yangtao9009@gmail.com)
 '''
 import os
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument("--input_dir", dest='input_dir', default='', help="Path to input images")
+parser.add_argument("--output_dir", dest='output_dir', default='', help="Path to saved models")
+parser.add_argument("--gpu_id", dest='gpu_id', default=0, type=int)
+opt = parser.parse_args()
+
+# torch.cuda.set_device(opt.gpu_id)
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
+os.environ["CUDA_VISIBLE_DEVICES"]=str(opt.gpu_id)
+
 import cv2
 import glob
 import time
@@ -14,8 +26,6 @@ from face_model.face_gan import FaceGAN
 from align_faces import warp_and_crop_face, get_reference_facial_points
 from skimage import transform as tf
 import torch
-from argparse import ArgumentParser
-
 
 class FaceEnhancement(object):
     def __init__(self, base_dir='./', size=512, model=None, channel_multiplier=2):
@@ -83,11 +93,6 @@ class FaceEnhancement(object):
         
 
 if __name__=='__main__':
-
-    parser = ArgumentParser()
-    parser.add_argument("--input_dir", dest='input_dir', default='', help="Path to input images")
-    parser.add_argument("--output_dir", dest='output_dir', default='', help="Path to saved models")
-    opt = parser.parse_args()
 
     model = {'name':'GPEN-512', 'size':512}
     
