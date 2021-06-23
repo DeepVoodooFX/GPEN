@@ -59,7 +59,7 @@ class FaceEnhancement(object):
         full_mask = np.zeros((height, width), dtype=np.float32)
         full_img = np.zeros(img.shape, dtype=np.uint8)
 
-        for i, (faceb, facial5points) in enumerate(zip(facebs, landms)):
+        for i, (faceb, facial5points) in enumerate(zip(reversed(facebs), reversed(landms))):
             if faceb[4]<self.threshold: continue
             fh, fw = (faceb[3]-faceb[1]), (faceb[2]-faceb[0])
 
@@ -85,6 +85,8 @@ class FaceEnhancement(object):
             mask = tmp_mask - full_mask
             full_mask[np.where(mask>0)] = tmp_mask[np.where(mask>0)]
             full_img[np.where(mask>0)] = tmp_img[np.where(mask>0)]
+
+            break
 
         full_mask = full_mask[:, :, np.newaxis]
         img = cv2.convertScaleAbs(img*(1-full_mask) + full_img*full_mask)
@@ -118,6 +120,7 @@ if __name__=='__main__':
             # cv2.imwrite(os.path.join(opt.output_dir, '.'.join(filename.split('.')[:-1])+'_COMP.jpg'), np.hstack((im, img)))
             cv2.imwrite(os.path.join(opt.output_dir, '.'.join(filename.split('.')[:-1])+'_GPEN.jpg'), img)
             
-            # for m, (ef, of) in enumerate(zip(enhanced_faces, orig_faces)):
+            # for m, (ef, of) in enumerate(zip(reversed(enhanced_faces), reversed(orig_faces))):
             #     of = cv2.resize(of, ef.shape[:2])
             #     cv2.imwrite(os.path.join(opt.output_dir, '.'.join(filename.split('.')[:-1])+'_face%02d'%m+'.jpg'), np.hstack((of, ef)))            
+            #     break
