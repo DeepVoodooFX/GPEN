@@ -9,6 +9,8 @@ parser = ArgumentParser()
 parser.add_argument("--input_dir", dest='input_dir', default='', help="Path to input images")
 parser.add_argument("--output_dir", dest='output_dir', default='', help="Path to saved models")
 parser.add_argument("--gpu_id", dest='gpu_id', default=0, type=int)
+parser.add_argument('--data_type', type=str, dest="data_type", default='dfl', choices=['dfl', 'raw'],
+                    help='Input image type. raw input image does not have meta data for face attributes')
 opt = parser.parse_args()
 
 # torch.cuda.set_device(opt.gpu_id)
@@ -26,6 +28,12 @@ from face_model.face_gan import FaceGAN
 from align_faces import warp_and_crop_face, get_reference_facial_points
 from skimage import transform as tf
 import torch
+
+from DFLIMG import DFLIMG, DFLPNG
+from pathlib import Path
+from PIL import Image
+import numpy as np
+
 
 class FaceEnhancement(object):
     def __init__(self, base_dir='./', size=512, model=None, channel_multiplier=2):
@@ -113,12 +121,49 @@ if __name__=='__main__':
 
             im = cv2.imread(file, cv2.IMREAD_COLOR) # BGR
             if not isinstance(im, np.ndarray): print(filename, 'error'); continue
-            im = cv2.resize(im, (0,0), fx=2, fy=2)
+            # im = cv2.resize(im, (0,0), fx=2, fy=2)
 
             img, orig_faces, enhanced_faces = faceenhancer.process(im)
-            
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            image_pil = Image.fromarray(img.astype(np.uint8))
+            output_file_name = os.path.join(opt.output_dir, filename)
+            image_pil.save(output_file_name, quality=100, subsampling=0)
+
+            # Add DFL meta data to output image
+            if opt.data_type == 'dfl':        
+                dfl_img1 = DFLIMG.load(Path(file))
+                if dfl_img1:
+                    if output_file_name.split('.')[-1] == 'jpg':
+                        dfl_img2 = DFLIMG.load(Path(output_file_name))
+
+                        # Add meta data to output image
+                        dfl_img2.set_face_type(dfl_img1.get_face_type())
+                        dfl_img2.set_landmarks(dfl_img1.get_landmarks())
+                        dfl_img2.set_source_rect(dfl_img1.get_source_rect())
+                        dfl_img2.set_source_filename(dfl_img1.get_source_filename())
+                        dfl_img2.set_source_landmarks(dfl_img1.get_source_landmarks())
+                        dfl_img2.set_image_to_face_mat(dfl_img1.get_image_to_face_mat())
+                        dfl_img2.save()
+                    elif output_file_name.split('.')[-1] == 'png':
+                        DFLPNG.DFLPNG.embed_data(
+                            filename = output_file_name,
+                            face_type = dfl_img1.get_face_type(),
+                            landmarks = dfl_img1.get_landmarks(),
+                            source_filename = dfl_img1.get_source_filename(),
+                            source_rect = dfl_img1.get_source_rect(),
+                            source_landmarks = dfl_img1.get_source_landmarks(),
+                            image_to_face_mat = dfl_img1.get_image_to_face_mat(),
+                            pitch_yaw_roll = None,
+                            eyebrows_expand_mod = dfl_img1.get_eyebrows_expand_mod(),
+                            cfg = None,
+                            model_data = None
+                        )
+                    else:
+                        print('unknown output format: ' + output_file_name.split('.')[-1])
+
+
             # cv2.imwrite(os.path.join(opt.output_dir, '.'.join(filename.split('.')[:-1])+'_COMP.jpg'), np.hstack((im, img)))
-            cv2.imwrite(os.path.join(opt.output_dir, '.'.join(filename.split('.')[:-1])+'_GPEN.jpg'), img)
+            # cv2.imwrite(os.path.join(opt.output_dir, '.'.join(filename.split('.')[:-1])+'_GPEN.jpg'), img)
             
             # for m, (ef, of) in enumerate(zip(reversed(enhanced_faces), reversed(orig_faces))):
             #     of = cv2.resize(of, ef.shape[:2])
